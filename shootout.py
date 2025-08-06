@@ -14,7 +14,7 @@ MONGO_CONN_STR = "mongodb://user:password@localhost:27017/"
 
 NUM_DOCS = 50_000
 NUM_UPSERTS = 10_000
-BATCH_SIZE = 1000
+BATCH_SIZE = 1_000    
 
 # --- Data Generation ---
 def generate_simple_metric(doc_id):
@@ -125,14 +125,19 @@ def mongo_flexible_insert(collection, docs):
 def main():
     console = Console()
     console.print("[bold]Starting PostgreSQL vs. MongoDB Shootout...[/bold]")
-    table = Table(title=f"PostgreSQL vs. MongoDB Shootout ({NUM_DOCS} docs)")
+    console.print("[bold]Configuration:[/bold]")
+    console.print(f"Number of documents: {NUM_DOCS}")
+    console.print(f"Number of upserts: {NUM_UPSERTS}")
+    console.print(f"Batch size: {BATCH_SIZE}")
+
+    table = Table(title=f"PostgreSQL vs. MongoDB Shootout ({NUM_DOCS} docs, {NUM_UPSERTS} upserts, batch size {BATCH_SIZE})")
     table.add_column("Test Case", style="cyan")
     table.add_column("PostgreSQL (JSONB)", style="magenta", justify="right")
     table.add_column("MongoDB (BSON)", style="green", justify="right")
 
     # --- Connections ---
     console.print(f"[bold]Connecting to postgres {PG_CONN_STR}...[/bold]")
-    pg_conn = psycopg2.connect(PG_CONN_STR, connect_timeout=10)
+    pg_conn = psycopg2.connect(PG_CONN_STR, connect_timeout=3)
 
     console.print(f"[bold]Connecting to MongoDB {MONGO_CONN_STR}...[/bold]")
     mongo_client = MongoClient(MONGO_CONN_STR)
@@ -154,7 +159,7 @@ def main():
 
     pg_insert_time = benchmark(pg_bulk_insert, pg_conn, simple_docs)
     mongo_insert_time = benchmark(mongo_bulk_insert, mongo_metrics_coll, mongo_simple_docs)
-    table.add_row("Bulk Insert (Simple)", f"{pg_insert_time:.4f}s", f"{mongo_insert_time:.4f}s")
+    table.add_row("Insert (Simple)", f"{pg_insert_time:.4f}s", f"{mongo_insert_time:.4f}s")
 
     # --- Test 2: Upserting Metrics ---
     console.print(f"[bold]Running Test 2: Upserting {NUM_UPSERTS} updated metrics...[/bold]")
@@ -170,7 +175,7 @@ def main():
 
     pg_upsert_time = benchmark(pg_upsert, pg_conn, docs_to_upsert)
     mongo_upsert_time = benchmark(mongo_upsert, mongo_metrics_coll, mongo_docs_to_upsert)
-    table.add_row("Bulk Upsert", f"{pg_upsert_time:.4f}s", f"{mongo_upsert_time:.4f}s")
+    table.add_row("Upsert", f"{pg_upsert_time:.4f}s", f"{mongo_upsert_time:.4f}s")
 
     # --- Test 3: Read Query ---
     console.print(f"[bold]Running Test 3: Reading all updated metrics...[/bold]")
@@ -185,7 +190,7 @@ def main():
 
     pg_flex_time = benchmark(pg_flexible_insert, pg_conn, complex_docs)
     mongo_flex_time = benchmark(mongo_flexible_insert, mongo_results_coll, mongo_complex_docs)
-    table.add_row("Bulk Insert (Complex/Varied)", f"{pg_flex_time:.4f}s", f"{mongo_flex_time:.4f}s")
+    table.add_row("Insert (Complex/Varied)", f"{pg_flex_time:.4f}s", f"{mongo_flex_time:.4f}s")
     
     console.print(table)
 
