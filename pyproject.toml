@@ -4,7 +4,6 @@ version = "0.1.0"
 package-mode = false
 description = "Shootout between postgres and mongo for metrics and results storage"
 authors = [
-    {name = "Karl Boehnker",email = "karl.boehnker@lumen.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"
